@@ -10,9 +10,16 @@ pub enum StorageKey {
 }
 
 #[derive(BorshDeserialize, BorshSerialize)]
+pub enum TokenType {
+    NEAR,
+    FT(AccountId),  // Account ID of the FT contract
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct Lottery {
     owner: AccountId,
-    ticket_price: NearToken,
+    token_type: TokenType,
+    ticket_price: u128,
     participants: Vector<AccountId>,
     is_active: bool,
     winner: Option<AccountId>,
@@ -37,10 +44,16 @@ impl Default for Contract {
 #[near_bindgen]
 impl Contract {
     #[payable]
-    pub fn create_lottery(&mut self, ticket_price: U128) -> u64 {
+    pub fn create_lottery(&mut self, ticket_price: U128, token_account_id: Option<AccountId>) -> u64 {
+        let token_type = match token_account_id {
+            Some(account_id) => TokenType::FT(account_id),
+            None => TokenType::NEAR,
+        };
+
         let lottery = Lottery {
             owner: env::predecessor_account_id(),
-            ticket_price: NearToken::from_yoctonear(ticket_price.0),
+            token_type,
+            ticket_price: ticket_price.0,
             participants: Vector::new(StorageKey::Participants {
                 lottery_id: self.lottery_count,
             }),
@@ -58,11 +71,24 @@ impl Contract {
     pub fn buy_ticket(&mut self, lottery_id: u64) {
         let mut lottery = self.lotteries.get(&lottery_id).expect("Lottery not found");
         assert!(lottery.is_active, "Lottery is not active");
-        assert_eq!(
-            env::attached_deposit(),
-            lottery.ticket_price,
-            "Attached deposit must equal ticket price"
-        );
+
+        match lottery.token_type {
+            TokenType::NEAR => {
+                assert_eq!(
+                    env::attached_deposit(),
+                    NearToken::from_yoctonear(lottery.ticket_price),
+                    "Attached deposit must equal ticket price"
+                );
+            },
+            TokenType::FT(_) => {
+                // For FT, we'll verify the transfer through a callback
+                assert_eq!(
+                    env::attached_deposit(),
+                    NearToken::from_yoctonear(0),
+                    "No deposit needed for FT tickets"
+                );
+            }
+        }
 
         lottery.participants.push(&env::predecessor_account_id());
         self.lotteries.insert(&lottery_id, &lottery);
@@ -76,9 +102,17 @@ impl Contract {
         let random_index = self.get_random_number(lottery.participants.len());
         let winner = lottery.participants.get(random_index).unwrap();
         
-        let yocto_price = lottery.ticket_price.as_yoctonear();
-        let total_yocto = yocto_price * u128::try_from(lottery.participants.len()).unwrap();
-        Promise::new(winner.clone()).transfer(NearToken::from_yoctonear(total_yocto));
+        match lottery.token_type {
+            TokenType::NEAR => {
+                let total_amount = lottery.ticket_price * u128::try_from(lottery.participants.len()).unwrap();
+                Promise::new(winner.clone()).transfer(NearToken::from_yoctonear(total_amount));
+            },
+            TokenType::FT(token_account) => {
+                // For FT, we need to call the FT contract to transfer tokens
+                let total_amount = lottery.ticket_price * u128::try_from(lottery.participants.len()).unwrap();
+                self.ft_transfer(token_account, winner.clone(), total_amount.into());
+            }
+        }
 
         lottery.is_active = false;
         lottery.winner = Some(winner.clone());
@@ -88,11 +122,16 @@ impl Contract {
     }
 
     // View methods
-    pub fn get_lottery(&self, lottery_id: u64) -> Option<(AccountId, U128, bool, Option<AccountId>, u64)> {
+    pub fn get_lottery(&self, lottery_id: u64) -> Option<(AccountId, String, U128, bool, Option<AccountId>, u64)> {
         if let Some(lottery) = self.lotteries.get(&lottery_id) {
+            let token_type_str = match lottery.token_type {
+                TokenType::NEAR => "NEAR".to_string(),
+                TokenType::FT(account_id) => account_id.to_string(),
+            };
             Some((
                 lottery.owner,
-                U128(lottery.ticket_price.as_yoctonear()),
+                token_type_str,
+                U128(lottery.ticket_price),
                 lottery.is_active,
                 lottery.winner,
                 lottery.participants.len(),
@@ -119,5 +158,20 @@ impl Contract {
             random_number = (random_number << 8) | (random_seed[i] as u64);
         }
         random_number % max
+    }
+
+    fn ft_transfer(&self, token_contract: AccountId, recipient: AccountId, amount: U128) {
+        Promise::new(token_contract)
+            .function_call(
+                "ft_transfer".to_string(),
+                serde_json::json!({
+                    "receiver_id": recipient,
+                    "amount": amount.0.to_string()
+                })
+                .to_string()
+                .into_bytes(),
+                NearToken::from_yoctonear(1), // attached deposit for storage
+                NearToken::from_tgas(30)
+            );
     }
 } 

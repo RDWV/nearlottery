@@ -21,6 +21,9 @@ import {
   NumberInput,
   NumberInputField,
   Badge,
+  Select,
+  InputGroup,
+  InputRightAddon,
 } from '@chakra-ui/react';
 import { Wallet } from './utils/near-wallet';
 
@@ -35,6 +38,8 @@ function App() {
   const [participants, setParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+  const [tokenType, setTokenType] = useState('NEAR');
+  const [tokenAddress, setTokenAddress] = useState('');
 
   useEffect(() => {
     const init = async () => {
@@ -49,7 +54,8 @@ function App() {
   const handleCreateLottery = async () => {
     try {
       setIsLoading(true);
-      await wallet.createLottery(ticketPrice);
+      const tokenAccountId = tokenType === 'NEAR' ? null : tokenAddress;
+      await wallet.createLottery(ticketPrice, tokenAccountId);
       toast({
         title: 'Success',
         description: 'Lottery created successfully!',
@@ -168,14 +174,41 @@ function App() {
                     </CardHeader>
                     <CardBody>
                       <FormControl>
-                        <FormLabel>Ticket Price (in NEAR)</FormLabel>
-                        <NumberInput min={0}>
-                          <NumberInputField
-                            value={ticketPrice}
-                            onChange={(e) => setTicketPrice(e.target.value)}
-                            placeholder="Enter ticket price"
-                          />
-                        </NumberInput>
+                        <FormLabel>Token Type</FormLabel>
+                        <Select
+                          value={tokenType}
+                          onChange={(e) => setTokenType(e.target.value)}
+                          mb={4}
+                        >
+                          <option value="NEAR">NEAR</option>
+                          <option value="FT">Custom Token</option>
+                        </Select>
+
+                        {tokenType === 'FT' && (
+                          <FormControl mb={4}>
+                            <FormLabel>Token Contract Address</FormLabel>
+                            <Input
+                              value={tokenAddress}
+                              onChange={(e) => setTokenAddress(e.target.value)}
+                              placeholder="Enter token contract address"
+                            />
+                          </FormControl>
+                        )}
+
+                        <FormLabel>Ticket Price</FormLabel>
+                        <InputGroup>
+                          <NumberInput min={0} width="100%">
+                            <NumberInputField
+                              value={ticketPrice}
+                              onChange={(e) => setTicketPrice(e.target.value)}
+                              placeholder="Enter ticket price"
+                            />
+                          </NumberInput>
+                          <InputRightAddon>
+                            {tokenType === 'NEAR' ? 'NEAR' : 'Tokens'}
+                          </InputRightAddon>
+                        </InputGroup>
+
                         <Button
                           mt={4}
                           colorScheme="green"
@@ -242,24 +275,27 @@ function App() {
                               <strong>Owner:</strong> {lotteryDetails[0]}
                             </Text>
                             <Text>
+                              <strong>Token:</strong> {lotteryDetails[1]}
+                            </Text>
+                            <Text>
                               <strong>Ticket Price:</strong>{" "}
-                              {lotteryDetails[1] / 10 ** 24} NEAR
+                              {lotteryDetails[2] / (lotteryDetails[1] === "NEAR" ? 10 ** 24 : 1)} {lotteryDetails[1]}
                             </Text>
                             <Text>
                               <strong>Status:</strong>{" "}
                               <Badge
-                                colorScheme={lotteryDetails[2] ? "green" : "red"}
+                                colorScheme={lotteryDetails[3] ? "green" : "red"}
                               >
-                                {lotteryDetails[2] ? "Active" : "Ended"}
+                                {lotteryDetails[3] ? "Active" : "Ended"}
                               </Badge>
                             </Text>
                             <Text>
                               <strong>Winner:</strong>{" "}
-                              {lotteryDetails[3] || "Not determined"}
+                              {lotteryDetails[4] || "Not determined"}
                             </Text>
                             <Text>
                               <strong>Number of Participants:</strong>{" "}
-                              {lotteryDetails[4]}
+                              {lotteryDetails[5]}
                             </Text>
                           </Box>
                           <Box>
