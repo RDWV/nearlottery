@@ -16,6 +16,11 @@ import {
   CardBody,
   Stack,
   StackDivider,
+  FormControl,
+  FormLabel,
+  NumberInput,
+  NumberInputField,
+  Badge,
 } from '@chakra-ui/react';
 import { Wallet } from './utils/near-wallet';
 
@@ -28,88 +33,108 @@ function App() {
   const [lotteryId, setLotteryId] = useState('');
   const [lotteryDetails, setLotteryDetails] = useState(null);
   const [participants, setParticipants] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     const init = async () => {
       const wallet = new Wallet({ contractId: CONTRACT_ID });
-      await wallet.startUp();
+      const isSignedIn = await wallet.startUp();
       setWallet(wallet);
-      setIsSignedIn(!!wallet.accountId);
+      setIsSignedIn(isSignedIn);
     };
     init();
   }, []);
 
   const handleCreateLottery = async () => {
     try {
+      setIsLoading(true);
       await wallet.createLottery(ticketPrice);
       toast({
-        title: 'Lottery Created',
+        title: 'Success',
+        description: 'Lottery created successfully!',
         status: 'success',
         duration: 5000,
       });
+      setTicketPrice('');
     } catch (error) {
       toast({
-        title: 'Error creating lottery',
+        title: 'Error',
         description: error.message,
         status: 'error',
         duration: 5000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleBuyTicket = async () => {
     try {
-      await wallet.buyTicket(parseInt(lotteryId), ticketPrice);
+      setIsLoading(true);
+      const details = await wallet.getLottery(parseInt(lotteryId));
+      if (!details) throw new Error('Lottery not found');
+      await wallet.buyTicket(parseInt(lotteryId), details[1]);
       toast({
-        title: 'Ticket Purchased',
+        title: 'Success',
+        description: 'Ticket purchased successfully!',
         status: 'success',
         duration: 5000,
       });
       await loadLotteryDetails();
     } catch (error) {
       toast({
-        title: 'Error buying ticket',
+        title: 'Error',
         description: error.message,
         status: 'error',
         duration: 5000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleEndLottery = async () => {
     try {
+      setIsLoading(true);
       await wallet.endLottery(parseInt(lotteryId));
       toast({
-        title: 'Lottery Ended',
+        title: 'Success',
+        description: 'Lottery ended successfully!',
         status: 'success',
         duration: 5000,
       });
       await loadLotteryDetails();
     } catch (error) {
       toast({
-        title: 'Error ending lottery',
+        title: 'Error',
         description: error.message,
         status: 'error',
         duration: 5000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const loadLotteryDetails = async () => {
     if (!lotteryId) return;
     try {
-      const details = await wallet.viewLottery(parseInt(lotteryId));
+      setIsLoading(true);
+      const details = await wallet.getLottery(parseInt(lotteryId));
+      if (!details) throw new Error('Lottery not found');
       setLotteryDetails(details);
       const participantsList = await wallet.getParticipants(parseInt(lotteryId));
       setParticipants(participantsList);
     } catch (error) {
       toast({
-        title: 'Error loading lottery details',
+        title: 'Error',
         description: error.message,
         status: 'error',
         duration: 5000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -119,14 +144,22 @@ function App() {
 
   return (
     <ChakraProvider theme={theme}>
-      <Box textAlign="center" fontSize="xl">
-        <Grid minH="100vh" p={3}>
-          <Container>
+      <Box textAlign="center" fontSize="xl" p={5}>
+        <Grid minH="100vh">
+          <Container maxW="container.md">
             <VStack spacing={8}>
-              <Heading>NEAR Lottery</Heading>
-              
+              <Heading size="2xl" mb={8}>
+                NEAR Lottery
+              </Heading>
+
               {!isSignedIn ? (
-                <Button onClick={() => wallet.signIn()}>Sign In with NEAR</Button>
+                <Button
+                  colorScheme="blue"
+                  size="lg"
+                  onClick={() => wallet.signIn()}
+                >
+                  Sign In with NEAR
+                </Button>
               ) : (
                 <VStack spacing={8} width="100%">
                   <Card width="100%">
@@ -134,14 +167,25 @@ function App() {
                       <Heading size="md">Create New Lottery</Heading>
                     </CardHeader>
                     <CardBody>
-                      <Stack spacing={4}>
-                        <Input
-                          placeholder="Ticket Price (in NEAR)"
-                          value={ticketPrice}
-                          onChange={(e) => setTicketPrice(e.target.value)}
-                        />
-                        <Button onClick={handleCreateLottery}>Create Lottery</Button>
-                      </Stack>
+                      <FormControl>
+                        <FormLabel>Ticket Price (in NEAR)</FormLabel>
+                        <NumberInput min={0}>
+                          <NumberInputField
+                            value={ticketPrice}
+                            onChange={(e) => setTicketPrice(e.target.value)}
+                            placeholder="Enter ticket price"
+                          />
+                        </NumberInput>
+                        <Button
+                          mt={4}
+                          colorScheme="green"
+                          onClick={handleCreateLottery}
+                          isLoading={isLoading}
+                          width="100%"
+                        >
+                          Create Lottery
+                        </Button>
+                      </FormControl>
                     </CardBody>
                   </Card>
 
@@ -151,14 +195,37 @@ function App() {
                     </CardHeader>
                     <CardBody>
                       <Stack spacing={4}>
-                        <Input
-                          placeholder="Lottery ID"
-                          value={lotteryId}
-                          onChange={(e) => setLotteryId(e.target.value)}
-                        />
-                        <Button onClick={loadLotteryDetails}>Load Lottery Details</Button>
-                        <Button onClick={handleBuyTicket}>Buy Ticket</Button>
-                        <Button onClick={handleEndLottery}>End Lottery</Button>
+                        <FormControl>
+                          <FormLabel>Lottery ID</FormLabel>
+                          <NumberInput min={0}>
+                            <NumberInputField
+                              value={lotteryId}
+                              onChange={(e) => setLotteryId(e.target.value)}
+                              placeholder="Enter lottery ID"
+                            />
+                          </NumberInput>
+                        </FormControl>
+                        <Button
+                          colorScheme="blue"
+                          onClick={loadLotteryDetails}
+                          isLoading={isLoading}
+                        >
+                          Load Lottery Details
+                        </Button>
+                        <Button
+                          colorScheme="purple"
+                          onClick={handleBuyTicket}
+                          isLoading={isLoading}
+                        >
+                          Buy Ticket
+                        </Button>
+                        <Button
+                          colorScheme="orange"
+                          onClick={handleEndLottery}
+                          isLoading={isLoading}
+                        >
+                          End Lottery
+                        </Button>
                       </Stack>
                     </CardBody>
                   </Card>
@@ -171,24 +238,54 @@ function App() {
                       <CardBody>
                         <Stack divider={<StackDivider />} spacing={4}>
                           <Box>
-                            <Text>Owner: {lotteryDetails[0]}</Text>
-                            <Text>Ticket Price: {lotteryDetails[1]} NEAR</Text>
-                            <Text>Active: {lotteryDetails[2] ? 'Yes' : 'No'}</Text>
-                            <Text>Winner: {lotteryDetails[3] || 'Not determined'}</Text>
-                            <Text>Number of Participants: {lotteryDetails[4]}</Text>
+                            <Text>
+                              <strong>Owner:</strong> {lotteryDetails[0]}
+                            </Text>
+                            <Text>
+                              <strong>Ticket Price:</strong>{" "}
+                              {lotteryDetails[1] / 10 ** 24} NEAR
+                            </Text>
+                            <Text>
+                              <strong>Status:</strong>{" "}
+                              <Badge
+                                colorScheme={lotteryDetails[2] ? "green" : "red"}
+                              >
+                                {lotteryDetails[2] ? "Active" : "Ended"}
+                              </Badge>
+                            </Text>
+                            <Text>
+                              <strong>Winner:</strong>{" "}
+                              {lotteryDetails[3] || "Not determined"}
+                            </Text>
+                            <Text>
+                              <strong>Number of Participants:</strong>{" "}
+                              {lotteryDetails[4]}
+                            </Text>
                           </Box>
                           <Box>
-                            <Heading size="sm">Participants</Heading>
-                            {participants.map((participant, index) => (
-                              <Text key={index}>{participant}</Text>
-                            ))}
+                            <Heading size="sm" mb={2}>
+                              Participants
+                            </Heading>
+                            {participants.length > 0 ? (
+                              participants.map((participant, index) => (
+                                <Text key={index}>{participant}</Text>
+                              ))
+                            ) : (
+                              <Text color="gray.500">No participants yet</Text>
+                            )}
                           </Box>
                         </Stack>
                       </CardBody>
                     </Card>
                   )}
 
-                  <Button onClick={() => wallet.signOut()}>Sign Out</Button>
+                  <Button
+                    colorScheme="red"
+                    variant="outline"
+                    onClick={() => wallet.signOut()}
+                  >
+                    Sign Out
+                  </Button>
                 </VStack>
               )}
             </VStack>
