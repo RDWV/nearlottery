@@ -1,7 +1,7 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, AccountId, Promise, BorshStorageKey};
+use near_sdk::{env, near_bindgen, AccountId, Promise, BorshStorageKey, NearToken};
 
 #[derive(BorshStorageKey, BorshSerialize)]
 pub enum StorageKey {
@@ -12,7 +12,7 @@ pub enum StorageKey {
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Lottery {
     owner: AccountId,
-    ticket_price: u128,
+    ticket_price: NearToken,
     participants: Vector<AccountId>,
     is_active: bool,
     winner: Option<AccountId>,
@@ -40,7 +40,7 @@ impl Contract {
     pub fn create_lottery(&mut self, ticket_price: U128) -> u64 {
         let lottery = Lottery {
             owner: env::predecessor_account_id(),
-            ticket_price: ticket_price.0,
+            ticket_price: NearToken::from_yoctonear(ticket_price.0),
             participants: Vector::new(StorageKey::Participants {
                 lottery_id: self.lottery_count,
             }),
@@ -59,7 +59,7 @@ impl Contract {
         let mut lottery = self.lotteries.get(&lottery_id).expect("Lottery not found");
         assert!(lottery.is_active, "Lottery is not active");
         assert_eq!(
-            env::attached_deposit(),
+            NearToken::from_yoctonear(env::attached_deposit()),
             lottery.ticket_price,
             "Attached deposit must equal ticket price"
         );
@@ -76,8 +76,8 @@ impl Contract {
         let random_index = self.get_random_number(lottery.participants.len());
         let winner = lottery.participants.get(random_index).unwrap();
         
-        let total_amount = lottery.ticket_price * lottery.participants.len() as u128;
-        Promise::new(winner.clone()).transfer(total_amount);
+        let total_amount = lottery.ticket_price.as_yoctonear() * u128::try_from(lottery.participants.len()).unwrap();
+        Promise::new(winner.clone()).transfer(NearToken::from_yoctonear(total_amount));
 
         lottery.is_active = false;
         lottery.winner = Some(winner.clone());
@@ -91,7 +91,7 @@ impl Contract {
         if let Some(lottery) = self.lotteries.get(&lottery_id) {
             Some((
                 lottery.owner,
-                U128(lottery.ticket_price),
+                U128(lottery.ticket_price.as_yoctonear()),
                 lottery.is_active,
                 lottery.winner,
                 lottery.participants.len(),

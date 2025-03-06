@@ -189,6 +189,7 @@ dependencies = [
 name = "near-lottery"
 version = "0.1.0"
 dependencies = [
+ "borsh",
  "near-contract-standards",
  "near-sdk",
 ]
