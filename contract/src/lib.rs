@@ -1,12 +1,18 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, AccountId, Balance, Promise};
+use near_sdk::{env, near_bindgen, AccountId, Promise, BorshStorageKey};
+
+#[derive(BorshStorageKey, BorshSerialize)]
+pub enum StorageKey {
+    Lotteries,
+    Participants { lottery_id: u64 },
+}
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Lottery {
     owner: AccountId,
-    ticket_price: Balance,
+    ticket_price: u128,
     participants: Vector<AccountId>,
     is_active: bool,
     winner: Option<AccountId>,
@@ -22,7 +28,7 @@ pub struct Contract {
 impl Default for Contract {
     fn default() -> Self {
         Self {
-            lotteries: UnorderedMap::new(b"l"),
+            lotteries: UnorderedMap::new(StorageKey::Lotteries),
             lottery_count: 0,
         }
     }
@@ -35,7 +41,9 @@ impl Contract {
         let lottery = Lottery {
             owner: env::predecessor_account_id(),
             ticket_price: ticket_price.0,
-            participants: Vector::new(format!("p{}", self.lottery_count).as_bytes()),
+            participants: Vector::new(StorageKey::Participants {
+                lottery_id: self.lottery_count,
+            }),
             is_active: true,
             winner: None,
         };
