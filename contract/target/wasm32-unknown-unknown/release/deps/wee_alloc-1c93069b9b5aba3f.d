@@ -1,0 +1,11 @@
+C:\Users\minec\nearlottery\contract\target\wasm32-unknown-unknown\release\deps\libwee_alloc-1c93069b9b5aba3f.rmeta: C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\lib.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\extra_assert.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\const_init.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\neighbors.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\imp_wasm32.rs
+
+C:\Users\minec\nearlottery\contract\target\wasm32-unknown-unknown\release\deps\libwee_alloc-1c93069b9b5aba3f.rlib: C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\lib.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\extra_assert.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\const_init.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\neighbors.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\imp_wasm32.rs
+
+C:\Users\minec\nearlottery\contract\target\wasm32-unknown-unknown\release\deps\wee_alloc-1c93069b9b5aba3f.d: C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\lib.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\extra_assert.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\const_init.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\neighbors.rs C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\imp_wasm32.rs
+
+C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\lib.rs:
+C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\extra_assert.rs:
+C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\const_init.rs:
+C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\neighbors.rs:
+C:\Users\minec\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\wee_alloc-0.4.5\src\imp_wasm32.rs:
