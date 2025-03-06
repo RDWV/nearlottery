@@ -3,17 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "near-api-js": "^2.1.4",
-    "@near-wallet-selector/core": "^8.9.3",
-    "@near-wallet-selector/modal-ui": "^8.9.3",
-    "@near-wallet-selector/my-near-wallet": "^8.9.3",
-    "react-scripts": "5.0.1",
-    "@chakra-ui/react": "^2.8.2",
-    "@emotion/react": "^11.11.3",
-    "@emotion/styled": "^11.11.0",
-    "framer-motion": "^10.18.0"
+    "@chakra-ui/react": "^2.10.6",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@near-wallet-selector/core": "^8.10.0",
+    "@near-wallet-selector/modal-ui": "^8.10.0",
+    "@near-wallet-selector/my-near-wallet": "^8.10.0",
+    "framer-motion": "^10.18.0",
+    "near-api-js": "^4.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -38,5 +38,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
-} 
+  },
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
