@@ -26,6 +26,7 @@ import {
   InputRightAddon,
 } from '@chakra-ui/react';
 import { Wallet } from './utils/near-wallet';
+import { utils } from "near-api-js";
 
 const CONTRACT_ID = 'lottery.evodeployer.testnet'; // Updated contract ID
 
@@ -53,9 +54,32 @@ function App() {
 
   const handleCreateLottery = async () => {
     try {
+      if (!ticketPrice || isNaN(ticketPrice) || parseFloat(ticketPrice) <= 0) {
+        throw new Error('Please enter a valid ticket price');
+      }
+
+      if (tokenType === 'FT' && !tokenAddress) {
+        throw new Error('Please enter a token contract address');
+      }
+
       setIsLoading(true);
       const tokenAccountId = tokenType === 'NEAR' ? null : tokenAddress;
-      await wallet.createLottery(ticketPrice, tokenAccountId);
+      
+      // Format the ticket price properly
+      let formattedPrice;
+      if (tokenType === 'NEAR') {
+        // For NEAR tokens, pass the human-readable amount
+        formattedPrice = ticketPrice;
+      } else {
+        // For custom tokens, ensure it's a valid integer
+        if (ticketPrice.includes('.')) {
+          throw new Error('Custom token amounts must be whole numbers');
+        }
+        formattedPrice = ticketPrice;
+      }
+
+      await wallet.createLottery(formattedPrice, tokenAccountId);
+      
       toast({
         title: 'Success',
         description: 'Lottery created successfully!',
@@ -63,6 +87,7 @@ function App() {
         duration: 5000,
       });
       setTicketPrice('');
+      setTokenAddress('');
     } catch (error) {
       toast({
         title: 'Error',
@@ -80,7 +105,11 @@ function App() {
       setIsLoading(true);
       const details = await wallet.getLottery(parseInt(lotteryId));
       if (!details) throw new Error('Lottery not found');
-      await wallet.buyTicket(parseInt(lotteryId), details[1]);
+      const isNearToken = details[1] === "NEAR";
+      const ticketPrice = isNearToken ? 
+        utils.format.formatNearAmount(details[2].toString()) :
+        details[2].toString();
+      await wallet.buyTicket(parseInt(lotteryId), ticketPrice, isNearToken);
       toast({
         title: 'Success',
         description: 'Ticket purchased successfully!',
@@ -279,7 +308,10 @@ function App() {
                             </Text>
                             <Text>
                               <strong>Ticket Price:</strong>{" "}
-                              {lotteryDetails[2] / (lotteryDetails[1] === "NEAR" ? 10 ** 24 : 1)} {lotteryDetails[1]}
+                              {lotteryDetails[1] === "NEAR" 
+                                ? utils.format.formatNearAmount(lotteryDetails[2].toString())
+                                : lotteryDetails[2].toString()
+                              } {lotteryDetails[1]}
                             </Text>
                             <Text>
                               <strong>Status:</strong>{" "}

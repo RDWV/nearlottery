@@ -1,7 +1,8 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::json_types::U128;
-use near_sdk::{env, near_bindgen, AccountId, Promise, BorshStorageKey, NearToken};
+use near_sdk::{env, near_bindgen, AccountId, Promise, BorshStorageKey, NearToken, Gas};
+use near_sdk::serde_json;
 
 #[derive(BorshStorageKey, BorshSerialize)]
 pub enum StorageKey {
@@ -9,7 +10,7 @@ pub enum StorageKey {
     Participants { lottery_id: u64 },
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Clone)]
 pub enum TokenType {
     NEAR,
     FT(AccountId),  // Account ID of the FT contract
@@ -72,7 +73,7 @@ impl Contract {
         let mut lottery = self.lotteries.get(&lottery_id).expect("Lottery not found");
         assert!(lottery.is_active, "Lottery is not active");
 
-        match lottery.token_type {
+        match &lottery.token_type {
             TokenType::NEAR => {
                 assert_eq!(
                     env::attached_deposit(),
@@ -102,7 +103,7 @@ impl Contract {
         let random_index = self.get_random_number(lottery.participants.len());
         let winner = lottery.participants.get(random_index).unwrap();
         
-        match lottery.token_type {
+        match &lottery.token_type {
             TokenType::NEAR => {
                 let total_amount = lottery.ticket_price * u128::try_from(lottery.participants.len()).unwrap();
                 Promise::new(winner.clone()).transfer(NearToken::from_yoctonear(total_amount));
@@ -110,7 +111,7 @@ impl Contract {
             TokenType::FT(token_account) => {
                 // For FT, we need to call the FT contract to transfer tokens
                 let total_amount = lottery.ticket_price * u128::try_from(lottery.participants.len()).unwrap();
-                self.ft_transfer(token_account, winner.clone(), total_amount.into());
+                self.ft_transfer(token_account.clone(), winner.clone(), total_amount.into());
             }
         }
 
@@ -171,7 +172,7 @@ impl Contract {
                 .to_string()
                 .into_bytes(),
                 NearToken::from_yoctonear(1), // attached deposit for storage
-                NearToken::from_tgas(30)
+                Gas::from_tgas(30)
             );
     }
 } 
