@@ -59,7 +59,7 @@ impl Contract {
         let mut lottery = self.lotteries.get(&lottery_id).expect("Lottery not found");
         assert!(lottery.is_active, "Lottery is not active");
         assert_eq!(
-            NearToken::from_yoctonear(env::attached_deposit()),
+            env::attached_deposit(),
             lottery.ticket_price,
             "Attached deposit must equal ticket price"
         );
@@ -76,8 +76,9 @@ impl Contract {
         let random_index = self.get_random_number(lottery.participants.len());
         let winner = lottery.participants.get(random_index).unwrap();
         
-        let total_amount = lottery.ticket_price.as_yoctonear() * u128::try_from(lottery.participants.len()).unwrap();
-        Promise::new(winner.clone()).transfer(NearToken::from_yoctonear(total_amount));
+        let yocto_price = lottery.ticket_price.as_yoctonear();
+        let total_yocto = yocto_price * u128::try_from(lottery.participants.len()).unwrap();
+        Promise::new(winner.clone()).transfer(NearToken::from_yoctonear(total_yocto));
 
         lottery.is_active = false;
         lottery.winner = Some(winner.clone());
