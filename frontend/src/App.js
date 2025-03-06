@@ -24,7 +24,7 @@ import {
 } from '@chakra-ui/react';
 import { Wallet } from './utils/near-wallet';
 
-const CONTRACT_ID = 'your-contract-id.testnet'; // Replace with your contract ID
+const CONTRACT_ID = 'lottery.evodeployer.testnet'; // Updated contract ID
 
 function App() {
   const [wallet, setWallet] = useState(null);
